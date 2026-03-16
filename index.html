@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #343541;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background-color: #202123;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-wrapper {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .user-wrapper {
+            justify-content: flex-end;
+        }
+
+        .bot-wrapper {
+            justify-content: flex-start;
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user {
+            background-color: #0b93f6;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot {
+            background-color: #444654;
+            color: white;
+            border-bottom-left-radius: 0;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 15px;
+            background-color: #40414f;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: #19c37d;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #16a86c;
+        }
+
+        .typing {
+            font-style: italic;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">AI Chatbot</div>
+
+<div class="chat-container" id="chat"></div>
+
+<div class="input-container">
+    <input type="text" id="message" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("message");
+
+    function addMessage(text, sender) {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("message-wrapper");
+
+        if (sender === "user") {
+            wrapper.classList.add("user-wrapper");
+        } else {
+            wrapper.classList.add("bot-wrapper");
+        }
+
+        const msg = document.createElement("div");
+        msg.classList.add("message", sender);
+        msg.innerText = text;
+
+        wrapper.appendChild(msg);
+        chat.appendChild(wrapper);
+
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+        const message = input.value.trim();
+        if (!message) return;
+
+        addMessage(message, "user");
+        input.value = "";
+
+        const typingWrapper = document.createElement("div");
+        typingWrapper.classList.add("message-wrapper", "bot-wrapper");
+
+        const typingMsg = document.createElement("div");
+        typingMsg.classList.add("message", "bot", "typing");
+        typingMsg.innerText = "Typing...";
+
+        typingWrapper.appendChild(typingMsg);
+        chat.appendChild(typingWrapper);
+        chat.scrollTop = chat.scrollHeight;
+
+        fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            chat.removeChild(typingWrapper);
+            addMessage(data.reply, "bot");
+        })
+        .catch(error => {
+            chat.removeChild(typingWrapper);
+            addMessage("Error connecting to server.", "bot");
+        });
+    }
+
+    input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
